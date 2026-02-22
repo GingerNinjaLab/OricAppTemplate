@@ -1,7 +1,8 @@
+#define __DEBUG__
 
 #define PLAYER_SPEED   1
 #define BULLET_SPEED   2
-#define MAX_ENEMIES     5
+#define MAX_ENEMIES     7
 #define MAX_TILES     20
 #define ENEMY_SPEED   2
 #define ENEMY_RADIUS   4
@@ -17,6 +18,11 @@
 #define VDU_TOP 2
 #define VDU_BOTTOM 18
 #define VDU_RIGHT 39
+#define BASIC_BUFFER_LEN 100
+#define STATE_BUFFER_START_ADDR 0xB800
+#define STATE_BUFFER_END_ADDR 0xBB7F
+
+//0x24E
 
 // Enemy structure
 typedef struct {
@@ -31,33 +37,19 @@ typedef struct {
 } Tile;
 
 void Init();
-void Intro();
-void SetupUDGs();
-void Menu();
-void Options();
-void LoadGame();
-void SaveGame();
-
-
-void SetupSprites();
-void StartGame();
-void GameLoop();
-void PrintScore();
-void PrintLives();
-void GameOver();
-void MoveEnemies();
-int RandomNumber(int low,int high);
-void DrawLevel();
-void Pause(unsigned char time);
-void ShowDebug();
-void ShowEnemies(unsigned char e1,unsigned char e2,unsigned char e3,unsigned char e4,unsigned char e5);
-void PrintDebug1(unsigned int val);
-void PrintDebug2(unsigned int val);
-void PrintDebug3(unsigned int val);
-void PrintDebug4(unsigned int val);
-void PrintDebug5(unsigned int val);
-
-void PrintVolume();
-
-
-void Load();
+void Intro();						//Show Intro
+void Menu();						//Show main menu
+void Options();						//Show options
+void ClearBuffer();					//Clear out the buffer for LOAD/SAVE operations
+void Load();						//Prompt for loading
+void DoLoad();						//Load data from tape
+void GetLoadBuffer();				//Setup app/game state from the buffer after a load
+void SetSaveBuffer();				//Write app/game state to buffer for saving
+void Save();						//Prompt for saving
+void DoSave();						//Save data to tape
+void MainLoop();					//Main app/game loop
+int RandomNumber(int low,int high);	//Generate a random number between low and high
+void Pause(unsigned char time);		//Pause execution for a short time (crude)
+void ResetState();					//Reset all app/game state
+void ShowState();					//Show the state of the app/game
+void ClearBasicString();			//Clear the basic string buffer for each new command
