@@ -10,7 +10,8 @@
 
 #define __DEBUG__
 
-unsigned char mode=GAMEMODE_INTRO;
+unsigned char mode=APPMODE_INTRO;
+unsigned char appState=APPSTATE_UNINITIALIZED;
 unsigned char c,d,e;
 unsigned char i,j,k;
 unsigned int temp;
@@ -46,73 +47,48 @@ unsigned char txtX,txtY;
 unsigned char* addr;
 char *stuff;
 
+char *dialogMsg;
+char dialogText[8];
+
+//===========================================================================================
+//Buffer variables
+//===========================================================================================
+int bufferPointer;
+unsigned char bufferChar1,bufferChar2;
+unsigned int bufferInt;
+
 void main() {
-
- //   printf("%d\n", (void*)&hord[i]);
-
-//    return;
-
   Init();
+  mode=APPMODE_INTRO;
+  running=1;
+  MainLoop();
+}
 
-//  Test();
-  temp=1438;
-  stuff=itoa(temp);
-//  intBuf[0]=200;
-//  intBuf[1]=135;
+void MainLoop() {
 
-  /*
-  0000101 10011110
-  98
-
-  00000101  5
-  10011110  158
-
-  */
-  //Encode2CharsFromUnsignedInt(1438,&intBuf[0],&intBuf[1]);
-  printf("%s\n",stuff);
-
-  printf("Int = %d\n",temp);
-
-  i  = temp & 0xFF;        // Mask lower 8 bits
-  j = (temp >> 8) & 0xFF; // Shift right 8 bits, then mask
-
-  printf("Bytes, Low: %d High:%d\n",i,j);
-
-  temp = (j << 8) | i;
-
-  printf("Int = %d\n",temp);
-
-  return;
-
-  temp=0;
-  for (j=0;j<8;j++) {
-    printf("%d - %d\n",j,is_bit_set(intBuf[0],j));    
+  while (running) {
+    switch (mode) {
+      case APPMODE_INTRO:
+        Intro();
+        break;
+      case APPMODE_MENU:
+        Menu();
+        break;
+      case APPMODE_OPTIONS:
+        Options();
+        break;
+      case APPMODE_NEW:
+        MainLoop();
+        break;
+      case APPMODE_MAIN:
+        MainLoop();
+        break;
+      default:
+        mode=APPMODE_MENU;
+    }
   }
-  if (is_bit_set(intBuf[0],0)!=0) {temp+=256;}
-  if (is_bit_set(intBuf[0],1)!=0) {temp+=512;}
-  if (is_bit_set(intBuf[0],2)!=0) {temp+=1024;}
-  if (is_bit_set(intBuf[0],3)!=0) {temp+=2048;}
-  if (is_bit_set(intBuf[0],4)!=0) {temp+=4906;}
-  if (is_bit_set(intBuf[0],5)!=0) {temp+=8192;}
-  if (is_bit_set(intBuf[0],6)!=0) {temp+=16384;}
-  if (is_bit_set(intBuf[0],7)!=0) {temp+=32768;}
-  temp+=intBuf[1];
-  printf("%d",temp);
-
 }
 
-void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte) {
-  *highByte=0;
-  *lowByte=(char)(value & 256);
-  if (value & (1 << 8)==1) { *highByte+=1; }
-  if (value & (1 << 9)==1) { *highByte+=2; }
-  if (value & (1 << 10)==1) { *highByte+=4; }
-  if (value & (1 << 11)==1) { *highByte+=8; }
-  if (value & (1 << 12)==1) { *highByte+=16; }
-  if (value & (1 << 13)==1) { *highByte+=32; }
-  if (value & (1 << 14)==1) { *highByte+=64; }
-  if (value & (1 << 15)==1) { *highByte+=128; }
-}
 
 char is_bit_set(unsigned char value, unsigned int bit_index) {
   return (value & (1 << bit_index)) != 0;
@@ -122,37 +98,64 @@ void Intro() {
   cls();
   printf("App/Game template\n");
   Pause(10000);
-  mode=GAMEMODE_MENU;
+  mode=APPMODE_MENU;
 }
 
 
 void Menu() {
   u_cls();
-  printf("Battle Drome - Main menu %d",mode);
+  printf("Game/App template - Main menu %d",mode);
   printf("\n\n");
-  printf("1 . New game\n");
-  printf("2 . Options\n");
+  if (appState==APPSTATE_UNCHANGED) {
+    printf("1. New\n");
+    printf("2. Load\n");
+  } else {
+    printf("1. Continue\n");
+    printf("2. Save\n");
+  }
+  printf("3. Options\n");
   printf("esc . Quit\n");
 
-  Load();
-  
-  i=0;
   j=0;    
   while (i=0) {
       srandom(j);
       j++;
-      if (j==200) {
-          j=0;
-      }
-      if(kbhit()>0) {
-          i=1;
-      }
+      if (j==200) {j=0;}
+      if(kbhit()>0) {i=1;}
   }
   lastKey = get();  
   printf("%d",lastKey);
-  if (lastKey==49) {mode=GAMEMODE_INTRO;}
-  if (lastKey==50) {mode=GAMEMODE_OPTIONS;}
-  if (lastKey==27) {mode=GAMEMODE_MENU;}
+  if (appState==APPSTATE_UNCHANGED) {
+    if (lastKey==KEY_1) {mode=APPMODE_NEW;}
+    if (lastKey==KEY_2) {mode=APPMODE_LOAD;}
+  } else {
+
+  }
+  if (lastKey==KEY_3) {mode=APPMODE_OPTIONS;}
+
+  if (lastKey==49) {
+      New();
+      mode=APPMODE_INTRO;
+    } else {
+      dialogMsg="Start a new app? Current progress will be lost.";
+      if (ConfirmDialog()) {
+        Clear();
+        New();
+        appState=APPSTATE_CHANGED;
+      }
+    }
+  }
+
+  if (lastKey==27) {
+    dialogMsg="Are you sure you want to quit?";
+    if (ConfirmDialog()) {
+      mode=APPMODE_END;
+      running=0;
+    } else {
+      mode=APPMODE_MENU;
+    }
+  }
+    Pause(10000);
 }
 
 void SaveGame() {
@@ -161,7 +164,7 @@ void SaveGame() {
 
 void Options() {
   u_cls();
-  printf("Battle Drome - Options %d",mode);
+  printf("Game/App template - Options %d",mode);
 //  printf("\n\n");
   PrintVolume();
   gotoxy(3,4);
@@ -170,8 +173,8 @@ void Options() {
   while (j==0) {
     lastKey = get();  
    // printf("%d",lastKey);
-    if (lastKey==50) {mode=GAMEMODE_OPTIONS;j=1;}
-    if (lastKey==27) {mode=GAMEMODE_MENU;j=1;}
+    if (lastKey==50) {mode=APPMODE_OPTIONS;j=1;}
+    if (lastKey==27) {mode=APPMODE_MENU;j=1;}
     if (lastKey==44 && volume>0) {volume--; PrintVolume();}
     if (lastKey==46 && volume<10) {volume++; PrintVolume();}
   }
@@ -188,7 +191,7 @@ void Init() {
   addr = (unsigned char*)0x24E;   //
   *addr = 5;                      // set keyb delay at #24E
   volume=5;
-  mode=GAMEMODE_INTRO;
+  mode=APPMODE_INTRO;
 
 }
 
@@ -216,6 +219,7 @@ void New() {
     enemy->y=i;
     enemy->hp=1000+(int)+i;
   }
+  mode=APPMODE_MAIN;
 }
 
 void ClearBuffer() {
@@ -228,29 +232,14 @@ void ClearBuffer() {
 }
 
 void SetSaveBuffer() {
-  temp=STATE_BUFFER_START_ADDR;
+  ResetBufferPointer();
   for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
-    poke(temp,enemy->active);
-    temp++;
-    poke(temp,enemy->x);
-    temp++;
-    poke(temp,enemy->y);
-    temp++;
-
-
-    sprintf(intBuf,"%d", enemy->hp);
-    poke(temp,intBuf[0]);
-    temp++;
-    poke(temp,intBuf[1]);
-    temp++;
-    poke(temp,intBuf[2]);
-    temp++;
-    poke(temp,intBuf[3]);
-    temp++;
-
+    StoreCharInBuffer(enemy->active);
+    StoreCharInBuffer(enemy->x);  
+    StoreCharInBuffer(enemy->y);
+    StoreIntInBuffer(enemy->hp);
   }
-
 }
 
 void DoSave() {
@@ -267,36 +256,30 @@ void DoSave() {
 }
 
 void GetLoadBuffer() {
-  temp=STATE_BUFFER_START_ADDR;
+  ResetBufferPointer();
   i=0;
   while (i<MAX_ENEMIES) {
     enemy = &hord[i];
-    enemy->active=peek(temp);
-    temp++;
-    enemy->x=peek(temp);
-    temp++;
-    enemy->y=peek(temp);
-    temp++;
-
-    intBuf[0]=peek(temp);
-    temp++;
-    intBuf[1]=peek(temp);
-    temp++;
-    intBuf[2]=peek(temp);
-    temp++;
-    intBuf[3]=peek(temp);
-    intBuf[4]=0;
-    temp++;
-    printf("intBuf:%s\n",intBuf);
-    enemy->hp = sscanf(intBuf, "%d");
-
-
+    enemy->active=GetCharFromBuffer();
+    enemy->x=GetCharFromBuffer();
+    enemy->y=GetCharFromBuffer();
+    enemy->hp=GetIntFromBuffer();
     i++;
   }
-
 }
 
 void Load() {
+
+  printf("Enter name:\n");
+  gets(buf);
+  printf("Loading game:%s\n",buf);
+  ClearBasicString();
+  sprintf(basicString,"CLOAD\"%s\"",buf);
+  printf("Basic string:%s\n",basicString);
+  basic(basicString);
+
+  //Load data
+  GetLoadBuffer();
 
 }
 
@@ -389,3 +372,84 @@ void Test() {
     //BB7F
 
 }
+
+
+unsigned char ConfirmDialog() {
+  printf("%s\n",dialogMsg);
+  j=0;
+  while (j==0) {
+    lastKey = get();  
+    if (lastKey==KEY_Y) {return TRUE}
+    if (lastKey==KEY_N) {return FALSE;}
+    if (lastKey==KEY_ESC) {return FALSE;}
+  }
+}
+
+unsigned char TextDialog() {
+  printf("%s\n",dialogMsg);
+  for (i=0;i<DIALOG_TEXT_MAX_LEN;i++) {
+    dialogText[i]=0;
+  }
+  j=0;
+  i=0;
+  while (j==0) {
+    lastKey = get();  
+    if (lastKey==KEY_DEL) {
+      if (i>0) {
+        i--;
+        dialogText[i]=0;
+        printf("\b \b");
+      }
+    } 
+    if (lastKey==KEY_ENTER) {
+      j=1;
+    }
+    if (lastKey>32 && lastKey<=126 && i<DIALOG_TEXT_MAX_LEN-1) {
+      dialogText[i]=lastKey;
+      i++;
+    }
+
+    if (lastKey==KEY_ESC) {return FALSE;}
+    gotoxy(1,3);
+    printf("%s",dialogText);
+  }
+
+}
+
+//===========================================================================================
+//Buffer handling functions
+//===========================================================================================
+void ResetBufferPointer() {
+  bufferPointer=STATE_BUFFER_START_ADDR;
+}
+
+void StoreCharInBuffer(unsigned char value) {
+  poke(bufferPointer,value);
+  bufferPointer++;
+}
+
+unsigned char GetCharFromBuffer() {
+  bufferChar1 = peek(bufferPointer);
+  bufferPointer++;
+  return bufferChar1;
+}
+
+void StoreIntInBuffer(int value) {
+  bufferChar1  = value & 0xFF;        // Mask lower 8 bits
+  bufferChar2 = (value >> 8) & 0xFF; // Shift right 8 bits, then mask
+  poke(bufferPointer,bufferChar1);
+  bufferPointer++;
+  poke(bufferPointer,bufferChar2);
+  bufferPointer++;
+}
+
+int GetIntFromBuffer() {
+  bufferChar1 = peek(bufferPointer);
+  bufferPointer++;
+  bufferChar2 = peek(bufferPointer);
+  bufferPointer++;
+  bufferInt = (bufferChar2 << 8) | bufferChar1;
+  return bufferInt;
+}
+
+
