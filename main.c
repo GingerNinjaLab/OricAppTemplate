@@ -11,7 +11,7 @@
 #define __DEBUG__
 
 unsigned char mode=APPMODE_INTRO;
-unsigned char appState=APPSTATE_UNINITIALIZED;
+unsigned char appState=APPSTATE_UNCHANGED;
 unsigned char c,d,e;
 unsigned char i,j,k;
 unsigned int temp;
@@ -61,7 +61,8 @@ void main() {
   Init();
   mode=APPMODE_INTRO;
   running=1;
-  MainLoop();
+//  MainLoop();
+  Test();
 }
 
 void MainLoop() {
@@ -77,11 +78,20 @@ void MainLoop() {
       case APPMODE_OPTIONS:
         Options();
         break;
+      case APPMODE_SAVE:
+        SaveGame();
+        mode=APPMODE_MENU;
+        break;
+      case APPMODE_LOAD:
+        Load();
+        mode=APPMODE_MAIN;
+        break;
       case APPMODE_NEW:
-        MainLoop();
+        New();
+        mode=APPMODE_MAIN;
         break;
       case APPMODE_MAIN:
-        MainLoop();
+        MainApp();
         break;
       default:
         mode=APPMODE_MENU;
@@ -101,10 +111,20 @@ void Intro() {
   mode=APPMODE_MENU;
 }
 
+void MainApp() {
+  u_cls();
+  printf("App template - Main app");
+  j=0;
+  while (j==0) {
+    lastKey = get();  
+    printf("%d",lastKey);
+    if (lastKey==KEY_ESC) {mode=APPMODE_MENU;j=1;}
+  }  
+}
 
 void Menu() {
   u_cls();
-  printf("Game/App template - Main menu %d",mode);
+  printf("App template - Main menu %d",mode);
   printf("\n\n");
   if (appState==APPSTATE_UNCHANGED) {
     printf("1. New\n");
@@ -129,24 +149,13 @@ void Menu() {
     if (lastKey==KEY_1) {mode=APPMODE_NEW;}
     if (lastKey==KEY_2) {mode=APPMODE_LOAD;}
   } else {
-
+    if (lastKey==KEY_1) {mode=APPMODE_MAIN;}
+    if (lastKey==KEY_2) {mode=APPMODE_SAVE;}
   }
   if (lastKey==KEY_3) {mode=APPMODE_OPTIONS;}
 
-  if (lastKey==49) {
-      New();
-      mode=APPMODE_INTRO;
-    } else {
-      dialogMsg="Start a new app? Current progress will be lost.";
-      if (ConfirmDialog()) {
-        Clear();
-        New();
-        appState=APPSTATE_CHANGED;
-      }
-    }
-  }
 
-  if (lastKey==27) {
+  if (lastKey==KEY_ESC) {
     dialogMsg="Are you sure you want to quit?";
     if (ConfirmDialog()) {
       mode=APPMODE_END;
@@ -164,8 +173,7 @@ void SaveGame() {
 
 void Options() {
   u_cls();
-  printf("Game/App template - Options %d",mode);
-//  printf("\n\n");
+  printf("App template - Options %d",mode);
   PrintVolume();
   gotoxy(3,4);
   printf("esc . Quit\n");
@@ -185,14 +193,11 @@ void PrintVolume() {
   printf("Sound volume < %d > \n",volume);
 }
 
-
 void Init() {
   cls();
-  addr = (unsigned char*)0x24E;   //
-  *addr = 5;                      // set keyb delay at #24E
+  setflags(8+2); // So we don't get the blinking cursor frozen after we disabled the IRQ
   volume=5;
   mode=APPMODE_INTRO;
-
 }
 
 void Clear() {
@@ -210,7 +215,7 @@ void Clear() {
 
 void New() {
   #ifdef __DEBUG__
-    printf("New()()\n");
+    printf("New()\n");
   #endif // __DEBUG__
   for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
@@ -219,7 +224,7 @@ void New() {
     enemy->y=i;
     enemy->hp=1000+(int)+i;
   }
-  mode=APPMODE_MAIN;
+  appState=APPSTATE_CHANGED;
 }
 
 void ClearBuffer() {
@@ -246,13 +251,20 @@ void DoSave() {
   #ifdef __DEBUG__
     printf("DoSave()\n");
   #endif // __DEBUG__
-  ClearBasicString();
-  sprintf(basicString,"CSAVE\"%s\",A#%s,E#%s",buf,STATE_BUFFER_START_ADDR,STATE_BUFFER_END_ADDR);
-  #ifdef __DEBUG__
-    printf("Basic string:%s\n",basicString);
-    printf("Saving to tape\n");
-  #endif // __DEBUG__
-  basic(basicString);
+  dialogMsg=TEXT_SAVE;
+  if (TextDialog()==TRUE) {
+    printf("Press Record/Play on your tape drive\n");
+    printf("The press any key (or esc to abort)\n");
+    lastKey = get();  
+    if (lastKey==KEY_ESC) {
+      printf("Cancelled\n");
+      return;
+    }
+    SaveBufferToTape();
+    printf("Saved to tape\n");
+  } else {
+    printf("Cancelled\n");
+  }
 }
 
 void GetLoadBuffer() {
@@ -287,10 +299,13 @@ void DoLoad() {
   #ifdef __DEBUG__
     printf("DoLoad()\n");
   #endif // __DEBUG__
-  ClearBasicString();
+  dialogMsg=TEXT_LOAD;
+  if (TextDialog()==TRUE) {
+    LoadBufferFromTape();
+  } else {
+    printf("Cancelled\n");
+  }
 
-  sprintf(basicString,"CLOAD\"%s\"",buf);
-  basic(basicString);
 }
 
 void Pause(unsigned char time) {
@@ -312,49 +327,23 @@ void ShowState() {
   }
 }
 
-void ClearBasicString() {
-  for (i=0;i<BASIC_BUFFER_LEN;i++) {
-    basicString[i]=0;
-  }
-}
+
 
 void Test() {
 
-  printf("Write game data to buffer\n");
-  //Clear buffer
-  ClearBuffer();
-
-  //New state
   New();
-  
-  //Write state to buffer
-  SetSaveBuffer();
 
-  ShowState();
+  dialogMsg=TEXT_SAVE;
+  if (TextDialog()==TRUE) {
+    SaveBufferToTape();
+    printf("Saved to tape\n");
+  } else {
+    printf("Cancelled\n");
+  }
 
-  printf("Save game\n");
-  printf("Enter name:\n");
-  gets(buf);
-  printf("Saving game:%s\n",buf);
-  ClearBasicString();
-  //TODO: Make addres confirable
-  sprintf(basicString,"CSAVE\"%s\",A47104,E47999",buf,STATE_BUFFER_START_ADDR,STATE_BUFFER_END_ADDR);
-  printf("Basic string:%s\n",basicString);
 
-  printf("Saving to tape\n");
-  basic(basicString);
 
-  printf("Clear and load\n");
-  ClearBuffer();
-  Clear();
 
-  printf("Enter name:\n");
-  gets(buf);
-  printf("Loading game:%s\n",buf);
-  ClearBasicString();
-  sprintf(basicString,"CLOAD\"%s\"",buf);
-  printf("Basic string:%s\n",basicString);
-  basic(basicString);
 
   //Load data
   GetLoadBuffer();
@@ -379,7 +368,7 @@ unsigned char ConfirmDialog() {
   j=0;
   while (j==0) {
     lastKey = get();  
-    if (lastKey==KEY_Y) {return TRUE}
+    if (lastKey==KEY_Y) {return TRUE;}
     if (lastKey==KEY_N) {return FALSE;}
     if (lastKey==KEY_ESC) {return FALSE;}
   }
@@ -394,26 +383,27 @@ unsigned char TextDialog() {
   i=0;
   while (j==0) {
     lastKey = get();  
-    if (lastKey==KEY_DEL) {
-      if (i>0) {
-        i--;
-        dialogText[i]=0;
-        printf("\b \b");
-      }
-    } 
-    if (lastKey==KEY_ENTER) {
-      j=1;
-    }
+   // printf("%d\n",lastKey);
     if (lastKey>32 && lastKey<=126 && i<DIALOG_TEXT_MAX_LEN-1) {
       dialogText[i]=lastKey;
       i++;
     }
 
     if (lastKey==KEY_ESC) {return FALSE;}
-    gotoxy(1,3);
-    printf("%s",dialogText);
-  }
+    if (lastKey==KEY_ENTER) {return TRUE;}
+    if (lastKey==KEY_DEL) {
+      if (i>0) {
+        i--;
+        dialogText[i]=0;
+      }
+    } 
 
+    gotoxy(3,5);
+    printf("%s",dialogText);
+    gotoxy(3+i,5);
+    printf("* ");
+  }
+  return TRUE;
 }
 
 //===========================================================================================
@@ -452,4 +442,23 @@ int GetIntFromBuffer() {
   return bufferInt;
 }
 
+void ClearBasicString() {
+  for (i=0;i<BASIC_BUFFER_LEN;i++) {
+    basicString[i]=0;
+  }
+}
+
+void SaveBufferToTape() {
+    ClearBasicString();
+    sprintf(basicString,"CSAVE\"%s\",A47104,E47999",dialogText,STATE_BUFFER_START_ADDR,STATE_BUFFER_END_ADDR);
+    printf("Basic string:%s\n",basicString);
+    basic(basicString);
+}
+
+void LoadBufferFromTape() {
+    ClearBasicString();
+    sprintf(basicString,"CLOAD\"%s\"",dialogText);
+    printf("Basic string:%s\n",basicString);
+    basic(basicString);
+}
 

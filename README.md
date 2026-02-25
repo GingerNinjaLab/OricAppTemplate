@@ -98,3 +98,77 @@ void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte) {
   printf("%d",temp);
 
 
+
+  if (lastKey==49) {
+    New();
+    mode=APPMODE_INTRO;
+  } else {
+    dialogMsg="Start a new app? Current progress will be lost.";
+    if (ConfirmDialog()) {
+      Clear();
+      New();
+      appState=APPSTATE_CHANGED;
+    }
+  }
+
+
+
+  
+
+  printf("Write game data to buffer\n");
+  //Clear buffer
+  ClearBuffer();
+
+  //New state
+  New();
+  
+  //Write state to buffer
+  SetSaveBuffer();
+
+  ShowState();
+
+  printf("Save game\n");
+  printf("Enter name:\n");
+  gets(buf);
+  printf("Saving game:%s\n",buf);
+  ClearBasicString();
+  //TODO: Make addres confirable
+  sprintf(basicString,"CSAVE\"%s\",A47104,E47999",buf,STATE_BUFFER_START_ADDR,STATE_BUFFER_END_ADDR);
+  printf("Basic string:%s\n",basicString);
+
+  printf("Saving to tape\n");
+  basic(basicString);
+
+  printf("Clear and load\n");
+  ClearBuffer();
+  Clear();
+
+  printf("Enter name:\n");
+  gets(buf);
+  printf("Loading game:%s\n",buf);
+  ClearBasicString();
+  sprintf(basicString,"CLOAD\"%s\"",buf);
+  printf("Basic string:%s\n",basicString);
+  basic(basicString);
+
+
+    if (lastKey==KEY_DEL) {
+      if (i>0) {
+        i--;
+        dialogText[i]=0;
+        printf("\b \b");
+      }
+    } 
+    if (lastKey==KEY_ENTER) {
+      j=1;
+    }
+    if (lastKey>32 && lastKey<=126 && i<DIALOG_TEXT_MAX_LEN-1) {
+      dialogText[i]=lastKey;
+      i++;
+    }
+
+    if (lastKey==KEY_ESC) {return FALSE;}
+    gotoxy(1,3);
+    printf("%s",dialogText);
+
+

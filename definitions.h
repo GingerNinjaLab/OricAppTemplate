@@ -27,7 +27,7 @@
 #define STATE_BUFFER_END_ADDR 47999
 #define KEY_ESC 27
 #define KEY_ENTER 13
-#define KEY_DEL 8
+#define KEY_DEL 127
 #define KEY_1 49
 #define KEY_2 50
 #define KEY_3 51
@@ -35,9 +35,14 @@
 
 #define KEY_Y 89
 #define KEY_N 78
+#define KEY_LESSTHAN 44
+#define KEY_MORETHAN 46
+
 #define TRUE 1
 #define FALSE 0
 #define DIALOG_TEXT_MAX_LEN 8
+#define TEXT_LOAD "Enter file to load"
+#define TEXT_SAVE "Enter file to save"
 
 //0x24E
 
@@ -68,6 +73,7 @@ void SetSaveBuffer();				//Write app/game state to buffer for saving
 void Save();						//Prompt for saving
 void DoSave();						//Save data to tape
 void MainLoop();					//Main app/game loop
+void MainApp();
 int RandomNumber(int low,int high);	//Generate a random number between low and high
 void Pause(unsigned char time);		//Pause execution for a short time (crude)
 void ResetState();					//Reset all app/game state
@@ -86,11 +92,16 @@ unsigned int UnsignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte)
 void Encode2CharsFromSignedInt(int value,char *output);
 signed int SignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
 
+
+//Buffer operations
+//============================================================================================
 void ResetBufferPointer();
 
 void StoreCharInBuffer(unsigned char value);
 unsigned char GetCharFromBuffer();
-
 void StoreIntInBuffer(int value);
 int GetIntFromBuffer();
+
+void SaveBufferToTape();
+void LoadBufferFromTape();
 
