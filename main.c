@@ -61,8 +61,8 @@ void main() {
   Init();
   mode=APPMODE_INTRO;
   running=1;
-//  MainLoop();
-  Test();
+  MainLoop();
+//  Test();
 }
 
 void MainLoop() {
@@ -79,12 +79,19 @@ void MainLoop() {
         Options();
         break;
       case APPMODE_SAVE:
-        SaveGame();
-        mode=APPMODE_MENU;
+        if (Save()==TRUE) {
+          mode=APPMODE_MAIN;
+        } else {
+          mode=APPMODE_MENU;
+        }
         break;
       case APPMODE_LOAD:
-        Load();
-        mode=APPMODE_MAIN;
+        if (Load()==TRUE) {
+          mode=APPMODE_MAIN;
+          appState=APPSTATE_CHANGED;
+        } else {
+          mode=APPMODE_MENU;
+        }
         break;
       case APPMODE_NEW:
         New();
@@ -129,11 +136,13 @@ void Menu() {
   if (appState==APPSTATE_UNCHANGED) {
     printf("1. New\n");
     printf("2. Load\n");
+    printf("3. Options\n");
   } else {
     printf("1. Continue\n");
     printf("2. Save\n");
+    printf("3. Options\n");
+    printf("4. Close\n");
   }
-  printf("3. Options\n");
   printf("esc . Quit\n");
 
   j=0;    
@@ -151,6 +160,16 @@ void Menu() {
   } else {
     if (lastKey==KEY_1) {mode=APPMODE_MAIN;}
     if (lastKey==KEY_2) {mode=APPMODE_SAVE;}
+    if (lastKey==KEY_4) {
+      dialogMsg=TEXT_CLOSE;
+      if (ConfirmDialog()) {
+        appState=APPSTATE_UNCHANGED;
+        mode=APPMODE_NEW;
+        running=0;
+      } else {
+        mode=APPMODE_MENU;
+      }
+    }
   }
   if (lastKey==KEY_3) {mode=APPMODE_OPTIONS;}
 
@@ -167,9 +186,6 @@ void Menu() {
     Pause(10000);
 }
 
-void SaveGame() {
-
-}
 
 void Options() {
   u_cls();
@@ -203,7 +219,7 @@ void Init() {
 void Clear() {
   #ifdef __DEBUG__
     printf("Clear()()\n");
-  #endif // __DEBUG__
+  #endif 
   for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
     enemy->active=0;
@@ -216,7 +232,7 @@ void Clear() {
 void New() {
   #ifdef __DEBUG__
     printf("New()\n");
-  #endif // __DEBUG__
+  #endif 
   for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
     enemy->active=1;
@@ -227,30 +243,14 @@ void New() {
   appState=APPSTATE_CHANGED;
 }
 
-void ClearBuffer() {
-  #ifdef __DEBUG__
-    printf("ClearBuffer()\n");
-  #endif // __DEBUG__
-  for (temp=STATE_BUFFER_START_ADDR;temp<STATE_BUFFER_END_ADDR;temp++) {
-    poke(temp,0);
-  }
-}
 
-void SetSaveBuffer() {
-  ResetBufferPointer();
-  for (i=0;i<MAX_ENEMIES;i++) {
-    enemy = &hord[i];
-    StoreCharInBuffer(enemy->active);
-    StoreCharInBuffer(enemy->x);  
-    StoreCharInBuffer(enemy->y);
-    StoreIntInBuffer(enemy->hp);
-  }
-}
-
-void DoSave() {
+//===========================================================================================
+// Save/load functions
+//===========================================================================================
+unsigned char Save() {
   #ifdef __DEBUG__
-    printf("DoSave()\n");
-  #endif // __DEBUG__
+    printf("Save()\n");
+  #endif 
   dialogMsg=TEXT_SAVE;
   if (TextDialog()==TRUE) {
     printf("Press Record/Play on your tape drive\n");
@@ -258,56 +258,37 @@ void DoSave() {
     lastKey = get();  
     if (lastKey==KEY_ESC) {
       printf("Cancelled\n");
-      return;
+      return FALSE;
     }
     SaveBufferToTape();
     printf("Saved to tape\n");
+    return TRUE;
   } else {
     printf("Cancelled\n");
+    return FALSE;
   }
 }
 
-void GetLoadBuffer() {
-  ResetBufferPointer();
-  i=0;
-  while (i<MAX_ENEMIES) {
-    enemy = &hord[i];
-    enemy->active=GetCharFromBuffer();
-    enemy->x=GetCharFromBuffer();
-    enemy->y=GetCharFromBuffer();
-    enemy->hp=GetIntFromBuffer();
-    i++;
-  }
-}
-
-void Load() {
-
-  printf("Enter name:\n");
-  gets(buf);
-  printf("Loading game:%s\n",buf);
-  ClearBasicString();
-  sprintf(basicString,"CLOAD\"%s\"",buf);
-  printf("Basic string:%s\n",basicString);
-  basic(basicString);
-
-  //Load data
-  GetLoadBuffer();
-
-}
-
-void DoLoad() {
+unsigned char Load() {
   #ifdef __DEBUG__
-    printf("DoLoad()\n");
-  #endif // __DEBUG__
-  dialogMsg=TEXT_LOAD;
+    printf("Load()\n");
+  #endif 
+  dialogMsg=TEXT_SAVE;
   if (TextDialog()==TRUE) {
-    LoadBufferFromTape();
+    printf("Press Play on your tape drive\n");
+    GetLoadBuffer();
+    printf("Loaded from tape\n");
+    return TRUE;
   } else {
     printf("Cancelled\n");
+    return FALSE;
   }
-
 }
 
+
+//===========================================================================================
+//Utilities
+//===========================================================================================
 void Pause(unsigned char time) {
   for (i=0;i<time;i++) {
     for (j=0;j<time;j++) {
@@ -320,6 +301,9 @@ int RandomNumber(int low,int high) {
     return low + rand() % (high - low + 1);
 }
 
+//===========================================================================================
+//Debugging
+//===========================================================================================
 void ShowState() {
   for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
@@ -362,6 +346,9 @@ void Test() {
 
 }
 
+//===========================================================================================
+//Dialog functions
+//===========================================================================================
 
 unsigned char ConfirmDialog() {
   printf("%s\n",dialogMsg);
@@ -409,6 +396,19 @@ unsigned char TextDialog() {
 //===========================================================================================
 //Buffer handling functions
 //===========================================================================================
+void GetLoadBuffer() {
+  ResetBufferPointer();
+  i=0;
+  while (i<MAX_ENEMIES) {
+    enemy = &hord[i];
+    enemy->active=GetCharFromBuffer();
+    enemy->x=GetCharFromBuffer();
+    enemy->y=GetCharFromBuffer();
+    enemy->hp=GetIntFromBuffer();
+    i++;
+  }
+}
+
 void ResetBufferPointer() {
   bufferPointer=STATE_BUFFER_START_ADDR;
 }
@@ -462,3 +462,23 @@ void LoadBufferFromTape() {
     basic(basicString);
 }
 
+
+void ClearBuffer() {
+  #ifdef __DEBUG__
+    printf("ClearBuffer()\n");
+  #endif 
+  for (temp=STATE_BUFFER_START_ADDR;temp<STATE_BUFFER_END_ADDR;temp++) {
+    poke(temp,0);
+  }
+}
+
+void SetSaveBuffer() {
+  ResetBufferPointer();
+  for (i=0;i<MAX_ENEMIES;i++) {
+    enemy = &hord[i];
+    StoreCharInBuffer(enemy->active);
+    StoreCharInBuffer(enemy->x);  
+    StoreCharInBuffer(enemy->y);
+    StoreIntInBuffer(enemy->hp);
+  }
+}

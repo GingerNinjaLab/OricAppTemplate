@@ -43,6 +43,7 @@
 #define DIALOG_TEXT_MAX_LEN 8
 #define TEXT_LOAD "Enter file to load"
 #define TEXT_SAVE "Enter file to save"
+#define TEXT_CLOSE "Are you sure you want to close?"
 
 //0x24E
 
@@ -66,12 +67,10 @@ void Options();						//Show options
 void Clear();						//Clear all state values
 void New();							//Set new state
 void ClearBuffer();					//Clear out the buffer for LOAD/SAVE operations
-void Load();						//Prompt for loading
-void DoLoad();						//Load data from tape
+unsigned char Load();						//Load data from tape
 void GetLoadBuffer();				//Setup app/game state from the buffer after a load
 void SetSaveBuffer();				//Write app/game state to buffer for saving
-void Save();						//Prompt for saving
-void DoSave();						//Save data to tape
+unsigned char Save();						//Save data to tape
 void MainLoop();					//Main app/game loop
 void MainApp();
 int RandomNumber(int low,int high);	//Generate a random number between low and high
