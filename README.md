@@ -172,3 +172,22 @@ void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte) {
     printf("%s",dialogText);
 
 
+
+
+Start           In game (unchanged)       In game (changed)
+=====           ===================       =================
+1 New             Continue                1Continue
+2 Load            Load                    2Load
+                                          3Save
+                  Close                   4Close
+Options           Options                 5Options
+Quit                                      6Quit
+
+N
+L
+S
+O
+Q
+C
+
+                

@@ -6,8 +6,10 @@
 #define MAX_TILES     20
 #define ENEMY_SPEED   2
 #define ENEMY_RADIUS   4
-#define APPSTATE_UNCHANGED 1
-#define APPSTATE_CHANGED 2
+#define APPSTATE_NOTLOADED 1
+#define APPSTATE_UNCHANGED 2
+#define APPSTATE_CHANGED 3
+
 #define APPMODE_INTRO 0
 #define APPMODE_MENU 1
 #define APPMODE_OPTIONS 2
@@ -32,7 +34,9 @@
 #define KEY_2 50
 #define KEY_3 51
 #define KEY_4 52
+#define KEY_5 53
 
+#define KEY_SPC 32
 #define KEY_Y 89
 #define KEY_N 78
 #define KEY_LESSTHAN 44

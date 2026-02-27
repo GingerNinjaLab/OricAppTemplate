@@ -60,6 +60,7 @@ unsigned int bufferInt;
 void main() {
   Init();
   mode=APPMODE_INTRO;
+  
   running=1;
   MainLoop();
 //  Test();
@@ -88,7 +89,7 @@ void MainLoop() {
       case APPMODE_LOAD:
         if (Load()==TRUE) {
           mode=APPMODE_MAIN;
-          appState=APPSTATE_CHANGED;
+          appState=APPSTATE_UNCHANGED;
         } else {
           mode=APPMODE_MENU;
         }
@@ -104,6 +105,9 @@ void MainLoop() {
         mode=APPMODE_MENU;
     }
   }
+  u_cls();
+  printf("Retro Ginger https://retroginger.com\n");
+  printf("Thanks for playing!\n");
 }
 
 
@@ -113,7 +117,7 @@ char is_bit_set(unsigned char value, unsigned int bit_index) {
 
 void Intro() {
   cls();
-  printf("App/Game template\n");
+  printf("App template\n");
   Pause(10000);
   mode=APPMODE_MENU;
 }
@@ -121,11 +125,15 @@ void Intro() {
 void MainApp() {
   u_cls();
   printf("App template - Main app");
+  printf("esc to quit\n");
+  printf("Press space to 'do stuff'\n");
   j=0;
+  ShowState();
   while (j==0) {
     lastKey = get();  
-    printf("%d",lastKey);
     if (lastKey==KEY_ESC) {mode=APPMODE_MENU;j=1;}
+    if (lastKey==KEY_SPC) {appState=APPSTATE_CHANGED;}
+    ShowState();
   }  
 }
 
@@ -133,16 +141,22 @@ void Menu() {
   u_cls();
   printf("App template - Main menu %d",mode);
   printf("\n\n");
-  if (appState==APPSTATE_UNCHANGED) {
+  if (appState==APPSTATE_NOTLOADED) {
     printf("1. New\n");
     printf("2. Load\n");
-    printf("3. Options\n");
-  } else {
+  }
+  if (appState==APPSTATE_UNCHANGED) {
     printf("1. Continue\n");
-    printf("2. Save\n");
-    printf("3. Options\n");
+    printf("2. Load\n");
     printf("4. Close\n");
   }
+  if (appState==APPSTATE_CHANGED) {
+    printf("1. Continue\n");
+    printf("2. Load\n");
+    printf("3. Save\n");
+    printf("4. Close\n");
+  }
+  printf("5. Options\n");
   printf("esc . Quit\n");
 
   j=0;    
@@ -153,25 +167,32 @@ void Menu() {
       if(kbhit()>0) {i=1;}
   }
   lastKey = get();  
-  printf("%d",lastKey);
+//  printf("%d",lastKey);
+  if (appState==APPSTATE_NOTLOADED) {
+    if (lastKey==KEY_1) {mode=APPMODE_NEW;}
+    if (lastKey==KEY_2) {mode=APPMODE_LOAD;}
+  }
   if (appState==APPSTATE_UNCHANGED) {
     if (lastKey==KEY_1) {mode=APPMODE_NEW;}
     if (lastKey==KEY_2) {mode=APPMODE_LOAD;}
-  } else {
-    if (lastKey==KEY_1) {mode=APPMODE_MAIN;}
-    if (lastKey==KEY_2) {mode=APPMODE_SAVE;}
     if (lastKey==KEY_4) {
       dialogMsg=TEXT_CLOSE;
       if (ConfirmDialog()) {
-        appState=APPSTATE_UNCHANGED;
-        mode=APPMODE_NEW;
-        running=0;
-      } else {
-        mode=APPMODE_MENU;
+        appState=APPSTATE_NOTLOADED;
       }
     }
   }
-  if (lastKey==KEY_3) {mode=APPMODE_OPTIONS;}
+  if (appState==APPSTATE_CHANGED) {
+    if (lastKey==KEY_1) {mode=APPMODE_MAIN;}
+    if (lastKey==KEY_3) {mode=APPMODE_SAVE;}
+    if (lastKey==KEY_4) {
+      dialogMsg=TEXT_CLOSE;
+      if (ConfirmDialog()) {
+        appState=APPSTATE_NOTLOADED;
+      }
+    }
+  }
+  if (lastKey==KEY_5) {mode=APPMODE_OPTIONS;}
 
 
   if (lastKey==KEY_ESC) {
@@ -214,6 +235,7 @@ void Init() {
   setflags(8+2); // So we don't get the blinking cursor frozen after we disabled the IRQ
   volume=5;
   mode=APPMODE_INTRO;
+  appState=APPSTATE_NOTLOADED;
 }
 
 void Clear() {
@@ -240,7 +262,7 @@ void New() {
     enemy->y=i;
     enemy->hp=1000+(int)+i;
   }
-  appState=APPSTATE_CHANGED;
+  appState=APPSTATE_UNCHANGED;
 }
 
 
@@ -305,9 +327,17 @@ int RandomNumber(int low,int high) {
 //Debugging
 //===========================================================================================
 void ShowState() {
+  if (appState==APPSTATE_UNCHANGED) {
+    gotoxy(3,4);
+    printf("App state has not changed");
+  } else {
+    gotoxy(3,4);
+    printf("App state changed        ");
+  }
   for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
-    printf("%d.%d,%d/%d,%d\n",i,enemy->active,enemy->x,enemy->y,enemy->hp);
+    gotoxy(3,5+i);
+    printf("%d.%d,%d/%d,%d      ",i,enemy->active,enemy->x,enemy->y,enemy->hp);
   }
 }
 
