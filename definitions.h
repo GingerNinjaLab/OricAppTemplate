@@ -1,4 +1,4 @@
-#define __DEBUG__
+//#define __DEBUG__
 
 #define PLAYER_SPEED   1
 #define BULLET_SPEED   2
@@ -53,13 +53,13 @@
 
 // Enemy structure
 typedef struct {
-	int x, y;	                // Enemy Position 
+	unsigned char x, y;	                // Enemy Position 
 	unsigned char active;
 	int hp;
 } Enemy;
 
 typedef struct {
-	int x, y;	                // Tile Position 
+	unsigned char x, y;	                // Tile Position 
 	unsigned char canDestroy;   // Can destroy
     unsigned char isSolid;      // Enemy cannot walk over
 } Tile;
@@ -83,17 +83,12 @@ void ResetState();					//Reset all app/game state
 void ShowState();					//Show the state of the app/game
 void ClearBasicString();			//Clear the basic string buffer for each new command
 void PrintVolume();
+void UpdateState();
 unsigned char ConfirmDialog();
 unsigned char TextDialog();
 
 void Test();
 char is_bit_set(unsigned char value, unsigned int bit_index);
-
-void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte);
-unsigned int UnsignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
-
-void Encode2CharsFromSignedInt(int value,char *output);
-signed int SignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
 
 
 //Buffer operations

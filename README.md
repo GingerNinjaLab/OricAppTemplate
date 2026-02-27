@@ -191,3 +191,10 @@ Q
 C
 
                 
+
+                void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte);
+unsigned int UnsignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
+
+void Encode2CharsFromSignedInt(int value,char *output);
+signed int SignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
+

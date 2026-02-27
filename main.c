@@ -8,7 +8,7 @@
 #include "unirom.h"
 #include "libbasic.h"
 
-#define __DEBUG__
+//#define __DEBUG__
 
 unsigned char mode=APPMODE_INTRO;
 unsigned char appState=APPSTATE_UNCHANGED;
@@ -132,8 +132,9 @@ void MainApp() {
   while (j==0) {
     lastKey = get();  
     if (lastKey==KEY_ESC) {mode=APPMODE_MENU;j=1;}
-    if (lastKey==KEY_SPC) {appState=APPSTATE_CHANGED;}
+    if (lastKey==KEY_SPC) {appState=APPSTATE_CHANGED;UpdateState();}
     ShowState();
+    
   }  
 }
 
@@ -341,6 +342,14 @@ void ShowState() {
   }
 }
 
+void UpdateState() {
+  for (i=0;i<MAX_ENEMIES;i++) {
+    enemy = &hord[i];
+    enemy->x+=1;
+    enemy->y+=1;
+    enemy->hp+=1;
+  }
+}
 
 
 void Test() {
@@ -381,6 +390,7 @@ void Test() {
 //===========================================================================================
 
 unsigned char ConfirmDialog() {
+  gotoxy(3,20);
   printf("%s\n",dialogMsg);
   j=0;
   while (j==0) {
@@ -392,6 +402,7 @@ unsigned char ConfirmDialog() {
 }
 
 unsigned char TextDialog() {
+  gotoxy(3,20);
   printf("%s\n",dialogMsg);
   for (i=0;i<DIALOG_TEXT_MAX_LEN;i++) {
     dialogText[i]=0;
@@ -415,9 +426,9 @@ unsigned char TextDialog() {
       }
     } 
 
-    gotoxy(3,5);
+    gotoxy(3,21);
     printf("%s",dialogText);
-    gotoxy(3+i,5);
+    gotoxy(3+i,21);
     printf("* ");
   }
   return TRUE;
