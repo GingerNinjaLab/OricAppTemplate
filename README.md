@@ -198,3 +198,34 @@ unsigned int UnsignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte)
 void Encode2CharsFromSignedInt(int value,char *output);
 signed int SignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
 
+
+  New();
+
+  dialogMsg=TEXT_SAVE;
+  if (TextDialog()==TRUE) {
+    SaveBufferToTape();
+    printf("Saved to tape\n");
+  } else {
+    printf("Cancelled\n");
+  }
+
+
+
+
+
+  //Load data
+  GetLoadBuffer();
+
+  printf("State after load\n");
+  ShowState();
+
+  gets(buf);
+
+  Pause(100000);
+
+//47104
+//47999
+    //B800
+    //BB7F
+
+

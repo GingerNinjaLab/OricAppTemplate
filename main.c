@@ -110,7 +110,6 @@ void MainLoop() {
   printf("Thanks for playing!\n");
 }
 
-
 char is_bit_set(unsigned char value, unsigned int bit_index) {
   return (value & (1 << bit_index)) != 0;
 }
@@ -134,7 +133,6 @@ void MainApp() {
     if (lastKey==KEY_ESC) {mode=APPMODE_MENU;j=1;}
     if (lastKey==KEY_SPC) {appState=APPSTATE_CHANGED;UpdateState();}
     ShowState();
-    
   }  
 }
 
@@ -194,8 +192,6 @@ void Menu() {
     }
   }
   if (lastKey==KEY_5) {mode=APPMODE_OPTIONS;}
-
-
   if (lastKey==KEY_ESC) {
     dialogMsg="Are you sure you want to quit?";
     if (ConfirmDialog()) {
@@ -208,7 +204,6 @@ void Menu() {
     Pause(10000);
 }
 
-
 void Options() {
   u_cls();
   printf("App template - Options %d",mode);
@@ -218,7 +213,6 @@ void Options() {
   j=0;
   while (j==0) {
     lastKey = get();  
-   // printf("%d",lastKey);
     if (lastKey==50) {mode=APPMODE_OPTIONS;j=1;}
     if (lastKey==27) {mode=APPMODE_MENU;j=1;}
     if (lastKey==44 && volume>0) {volume--; PrintVolume();}
@@ -233,7 +227,7 @@ void PrintVolume() {
 
 void Init() {
   cls();
-  setflags(8+2); // So we don't get the blinking cursor frozen after we disabled the IRQ
+  setflags(8+2); // Disable blinking cusor and keyboard click
   volume=5;
   mode=APPMODE_INTRO;
   appState=APPSTATE_NOTLOADED;
@@ -252,6 +246,7 @@ void Clear() {
   }
 }
 
+//Start a new name, with default values
 void New() {
   #ifdef __DEBUG__
     printf("New()\n");
@@ -283,6 +278,7 @@ unsigned char Save() {
       printf("Cancelled\n");
       return FALSE;
     }
+    SetSaveBuffer(); 
     SaveBufferToTape();
     printf("Saved to tape\n");
     return TRUE;
@@ -296,9 +292,11 @@ unsigned char Load() {
   #ifdef __DEBUG__
     printf("Load()\n");
   #endif 
+  Clear();
   dialogMsg=TEXT_SAVE;
   if (TextDialog()==TRUE) {
     printf("Press Play on your tape drive\n");
+    LoadBufferFromTape();
     GetLoadBuffer();
     printf("Loaded from tape\n");
     return TRUE;
@@ -354,41 +352,11 @@ void UpdateState() {
 
 void Test() {
 
-  New();
-
-  dialogMsg=TEXT_SAVE;
-  if (TextDialog()==TRUE) {
-    SaveBufferToTape();
-    printf("Saved to tape\n");
-  } else {
-    printf("Cancelled\n");
-  }
-
-
-
-
-
-  //Load data
-  GetLoadBuffer();
-
-  printf("State after load\n");
-  ShowState();
-
-  gets(buf);
-
-  Pause(100000);
-
-//47104
-//47999
-    //B800
-    //BB7F
-
 }
 
 //===========================================================================================
 //Dialog functions
 //===========================================================================================
-
 unsigned char ConfirmDialog() {
   gotoxy(3,20);
   printf("%s\n",dialogMsg);
@@ -411,12 +379,10 @@ unsigned char TextDialog() {
   i=0;
   while (j==0) {
     lastKey = get();  
-   // printf("%d\n",lastKey);
     if (lastKey>32 && lastKey<=126 && i<DIALOG_TEXT_MAX_LEN-1) {
       dialogText[i]=lastKey;
       i++;
     }
-
     if (lastKey==KEY_ESC) {return FALSE;}
     if (lastKey==KEY_ENTER) {return TRUE;}
     if (lastKey==KEY_DEL) {
@@ -425,31 +391,44 @@ unsigned char TextDialog() {
         dialogText[i]=0;
       }
     } 
-
     gotoxy(3,21);
     printf("%s",dialogText);
     gotoxy(3+i,21);
     printf("* ");
+    gotoxy(3,22);
   }
   return TRUE;
 }
 
+
 //===========================================================================================
-//Buffer handling functions
+//Buffer handling functions - App specific
 //===========================================================================================
 void GetLoadBuffer() {
   ResetBufferPointer();
-  i=0;
-  while (i<MAX_ENEMIES) {
+  for (i=0;i<MAX_ENEMIES;i++) {
     enemy = &hord[i];
     enemy->active=GetCharFromBuffer();
     enemy->x=GetCharFromBuffer();
     enemy->y=GetCharFromBuffer();
     enemy->hp=GetIntFromBuffer();
-    i++;
   }
 }
 
+void SetSaveBuffer() {
+  ResetBufferPointer();
+  for (i=0;i<MAX_ENEMIES;i++) {
+    enemy = &hord[i];
+    StoreCharInBuffer(enemy->active);
+    StoreCharInBuffer(enemy->x);  
+    StoreCharInBuffer(enemy->y);
+    StoreIntInBuffer(enemy->hp);
+  }
+}
+
+//=============================================================================
+//Buffer handling functions - Generic functions to read/write data to/from tape
+//=============================================================================
 void ResetBufferPointer() {
   bufferPointer=STATE_BUFFER_START_ADDR;
 }
@@ -492,17 +471,20 @@ void ClearBasicString() {
 void SaveBufferToTape() {
     ClearBasicString();
     sprintf(basicString,"CSAVE\"%s\",A47104,E47999",dialogText,STATE_BUFFER_START_ADDR,STATE_BUFFER_END_ADDR);
-    printf("Basic string:%s\n",basicString);
+    #ifdef __DEBUG__
+      printf("Basic string:%s\n",basicString);
+    #endif 
     basic(basicString);
 }
 
 void LoadBufferFromTape() {
     ClearBasicString();
     sprintf(basicString,"CLOAD\"%s\"",dialogText);
-    printf("Basic string:%s\n",basicString);
+    #ifdef __DEBUG__
+      printf("Basic string:%s\n",basicString);
+    #endif 
     basic(basicString);
 }
-
 
 void ClearBuffer() {
   #ifdef __DEBUG__
@@ -513,13 +495,4 @@ void ClearBuffer() {
   }
 }
 
-void SetSaveBuffer() {
-  ResetBufferPointer();
-  for (i=0;i<MAX_ENEMIES;i++) {
-    enemy = &hord[i];
-    StoreCharInBuffer(enemy->active);
-    StoreCharInBuffer(enemy->x);  
-    StoreCharInBuffer(enemy->y);
-    StoreIntInBuffer(enemy->hp);
-  }
-}
+
