@@ -1,231 +1,69 @@
 # Oric App Template
+===================
 
+Template that provides a simple start point to develop an app/game
+It provides the following:
 
+- Intro
+- Main menu
+- Options screen (to sel volume only at this point)
+- Load/Save features
 
+It is designed to allow a game/app state to be saved and loaded using the lores1 screen as a buffer.
 
+It tracks the state of the current game/app andthe menu options change depending on that state.
+The quick demo added to the template shows a simple set of array variables that can be stored on tape and retrived.
+When running a 'new' or 'loading' a state you will see a table of information stored in a typedef array.
 
-B800	ALTERNATE CHAR SET	Mozaic char set in a 2x3 matrix for semi-graphics drawing. Can be redefined	BB7F	896
+That array is a simple struct that contains the following values:
 
+	unsigned char x, y;	   
+	unsigned char active;
+	int hp;
 
+These are from another game development but can be anytthing of courtse.
+In the example if you press the space bar the state changes with the x/y/hp values being incremeneted one. It is not very exciting but can be used to illustrate the point of the template code.
 
+When running in a emulator it is really easy to start a new game/app, press space a few times as if the user has done some work or played the game. Next you can save it to tape and continue or close the game state and start again. Then you can load your saves state from before by providing the file name. The Oriucutron will ausomatially load the tape file with that name so it becomes suprisingly simple to load and save as if you had a modern Oric!
 
-CSAVE
+Of course on a real Oric it would require some manual tape messing about but it should work fine.
 
-Atmos: #E909
+Currently the addresses for the buffer are hard coded to: Start 47104 End 47999 whcih is the lores 0 screen area. That is 895 bytes of data. Therefore you can only store and retrive that much informatiuon so there is a hard limit here.
+The addresses can be change if you wish but you will need to look into the code at the void SaveBufferToTape() method to find out.
 
-Get Tape param  #E91E
+The display and IO functions here are meant as placehgolders for your own code as the formatting is very crude. That was not the intention of this template.
 
+For example there are simple DialogBox and DialogText functions that either prompt the user or ask them for a line of text input.
+Currently the DialogText is limited to 8 chars as that if the largest tape file name.
 
+SAVING
+======
+To save data you need to modify method void SetSaveBuffer() with your own game/app variables. The most important thing is the accumplying method void GetLoadBuffer() must specify the varraiblers in the game order.
 
+Each time you with to store a value in the buffer call one of the following methods, depending on the type:
 
+StoreCharInBuffer()
 
-Tape storage
+StoreIntInBuffer()
 
-Var                 max     bytes
-unsigned char       255     1
-unsigned int        65k     2
+The mmethod SaveBufferToTape() is then called which saves the buffer to tape using the name gathered from the DialogText call.
 
 
-void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte) {
-  *highByte=0;
-  *lowByte=(char)(value & 256);
-  if (value & (1 << 8)==1) { *highByte+=1; }
-  if (value & (1 << 9)==1) { *highByte+=2; }
-  if (value & (1 << 10)==1) { *highByte+=4; }
-  if (value & (1 << 11)==1) { *highByte+=8; }
-  if (value & (1 << 12)==1) { *highByte+=16; }
-  if (value & (1 << 13)==1) { *highByte+=32; }
-  if (value & (1 << 14)==1) { *highByte+=64; }
-  if (value & (1 << 15)==1) { *highByte+=128; }
-}
+LOADING
+=======
+To load the data back from tape call the method LoadBufferFromTape() whcih will load a file with the name specificed in DialogText.
 
-  ResetBufferPointer();
-  StoreCharInBuffer(123);
-  StoreIntInBuffer(1438);
+Next call GetLoadBuffer() which will scan the buffer and set your game/app varaibles.
 
-  ResetBufferPointer();
-  bufferChar1 = GetCharFromBuffer();
-  printf("Retrieved char = %d\n",bufferChar1);
+The most importnat thing is to ensure that the SAVE and LOAD methods process the data in the same order and that the total size is not gigger than 895
 
-  temp = GetIntFromBuffer();
-  printf("Retrieved int = %d\n",temp);
-  
-  //return;
+Limitations
+The current template does not dynamically scale the size of the buffer when saving. It will always store 895 bytes. A nice update would be to calcualate the size of the buffer that needs to be saved each time.
 
-//  Test();
-  temp=1438;
-  stuff=itoa(temp);
-//  intBuf[0]=200;
-//  intBuf[1]=135;
+As with other LOAD operations on the Oric if something goes wrong or the file name is incorrect there is no way to get your machine back without a reset.
 
-  /*
-  0000101 10011110
-  98
+The template uses the amazing libbasic library from raxxis:
+ 
+ https://github.com/iss000/oricOpenLibrary
 
-  00000101  5
-  10011110  158
-
-  */
-  //Encode2CharsFromUnsignedInt(1438,&intBuf[0],&intBuf[1]);
-  printf("%s\n",stuff);
-
-  printf("Int = %d\n",temp);
-
-  i  = temp & 0xFF;        // Mask lower 8 bits
-  j = (temp >> 8) & 0xFF; // Shift right 8 bits, then mask
-
-  printf("Bytes, Low: %d High:%d\n",i,j);
-
-  temp = (j << 8) | i;
-
-  printf("Int = %d\n",temp);
-
-  return;
-
-  temp=0;
-  for (j=0;j<8;j++) {
-    printf("%d - %d\n",j,is_bit_set(intBuf[0],j));    
-  }
-  if (is_bit_set(intBuf[0],0)!=0) {temp+=256;}
-  if (is_bit_set(intBuf[0],1)!=0) {temp+=512;}
-  if (is_bit_set(intBuf[0],2)!=0) {temp+=1024;}
-  if (is_bit_set(intBuf[0],3)!=0) {temp+=2048;}
-  if (is_bit_set(intBuf[0],4)!=0) {temp+=4906;}
-  if (is_bit_set(intBuf[0],5)!=0) {temp+=8192;}
-  if (is_bit_set(intBuf[0],6)!=0) {temp+=16384;}
-  if (is_bit_set(intBuf[0],7)!=0) {temp+=32768;}
-  temp+=intBuf[1];
-  printf("%d",temp);
-
-
-
-  if (lastKey==49) {
-    New();
-    mode=APPMODE_INTRO;
-  } else {
-    dialogMsg="Start a new app? Current progress will be lost.";
-    if (ConfirmDialog()) {
-      Clear();
-      New();
-      appState=APPSTATE_CHANGED;
-    }
-  }
-
-
-
-  
-
-  printf("Write game data to buffer\n");
-  //Clear buffer
-  ClearBuffer();
-
-  //New state
-  New();
-  
-  //Write state to buffer
-  SetSaveBuffer();
-
-  ShowState();
-
-  printf("Save game\n");
-  printf("Enter name:\n");
-  gets(buf);
-  printf("Saving game:%s\n",buf);
-  ClearBasicString();
-  //TODO: Make addres confirable
-  sprintf(basicString,"CSAVE\"%s\",A47104,E47999",buf,STATE_BUFFER_START_ADDR,STATE_BUFFER_END_ADDR);
-  printf("Basic string:%s\n",basicString);
-
-  printf("Saving to tape\n");
-  basic(basicString);
-
-  printf("Clear and load\n");
-  ClearBuffer();
-  Clear();
-
-  printf("Enter name:\n");
-  gets(buf);
-  printf("Loading game:%s\n",buf);
-  ClearBasicString();
-  sprintf(basicString,"CLOAD\"%s\"",buf);
-  printf("Basic string:%s\n",basicString);
-  basic(basicString);
-
-
-    if (lastKey==KEY_DEL) {
-      if (i>0) {
-        i--;
-        dialogText[i]=0;
-        printf("\b \b");
-      }
-    } 
-    if (lastKey==KEY_ENTER) {
-      j=1;
-    }
-    if (lastKey>32 && lastKey<=126 && i<DIALOG_TEXT_MAX_LEN-1) {
-      dialogText[i]=lastKey;
-      i++;
-    }
-
-    if (lastKey==KEY_ESC) {return FALSE;}
-    gotoxy(1,3);
-    printf("%s",dialogText);
-
-
-
-
-Start           In game (unchanged)       In game (changed)
-=====           ===================       =================
-1 New             Continue                1Continue
-2 Load            Load                    2Load
-                                          3Save
-                  Close                   4Close
-Options           Options                 5Options
-Quit                                      6Quit
-
-N
-L
-S
-O
-Q
-C
-
-                
-
-                void Encode2CharsFromUnsignedInt(int value,char *highByte,char *lowByte);
-unsigned int UnsignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
-
-void Encode2CharsFromSignedInt(int value,char *output);
-signed int SignedIntFrom2Chars(unsigned char highByte,unsigned char lowByte);
-
-
-  New();
-
-  dialogMsg=TEXT_SAVE;
-  if (TextDialog()==TRUE) {
-    SaveBufferToTape();
-    printf("Saved to tape\n");
-  } else {
-    printf("Cancelled\n");
-  }
-
-
-
-
-
-  //Load data
-  GetLoadBuffer();
-
-  printf("State after load\n");
-  ShowState();
-
-  gets(buf);
-
-  Pause(100000);
-
-//47104
-//47999
-    //B800
-    //BB7F
-
-
+ It is my intention to actually remove this as I only need it to patch into the BASIC LOAD and SAVE commands.

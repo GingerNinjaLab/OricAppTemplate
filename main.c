@@ -5,7 +5,6 @@
 #include <lib.h>
 #include <conio.h>
 #include "definitions.h"
-#include "unirom.h"
 #include "libbasic.h"
 
 //#define __DEBUG__
@@ -105,7 +104,7 @@ void MainLoop() {
         mode=APPMODE_MENU;
     }
   }
-  u_cls();
+  cls();
   printf("Retro Ginger https://retroginger.com\n");
   printf("Thanks for playing!\n");
 }
@@ -122,7 +121,7 @@ void Intro() {
 }
 
 void MainApp() {
-  u_cls();
+  cls();
   printf("App template - Main app");
   printf("esc to quit\n");
   printf("Press space to 'do stuff'\n");
@@ -137,7 +136,7 @@ void MainApp() {
 }
 
 void Menu() {
-  u_cls();
+  cls();
   printf("App template - Main menu %d",mode);
   printf("\n\n");
   if (appState==APPSTATE_NOTLOADED) {
@@ -205,7 +204,7 @@ void Menu() {
 }
 
 void Options() {
-  u_cls();
+  cls();
   printf("App template - Options %d",mode);
   PrintVolume();
   gotoxy(3,4);

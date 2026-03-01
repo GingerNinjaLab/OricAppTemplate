@@ -58,12 +58,6 @@ typedef struct {
 	int hp;
 } Enemy;
 
-typedef struct {
-	unsigned char x, y;	                // Tile Position 
-	unsigned char canDestroy;   // Can destroy
-    unsigned char isSolid;      // Enemy cannot walk over
-} Tile;
-
 void Init();
 void Intro();						//Show Intro
 void Menu();						//Show main menu
