@@ -66,4 +66,4 @@ The template uses the amazing libbasic library from raxxis:
  
  https://github.com/iss000/oricOpenLibrary
 
- It is my intention to actually remove this as I only need it to patch into the BASIC LOAD and SAVE commands.
+It is my intention to actually remove this as I only need it to patch into the BASIC LOAD and SAVE commands.

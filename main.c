@@ -30,9 +30,6 @@ char buf[8];
 char basicString[BASIC_BUFFER_LEN];
 char intBuf[10];
 
-Tile tiles[MAX_TILES];
-Tile *tile;
-
 unsigned char active[MAX_ENEMIES];
 unsigned int lastKey;
 unsigned char enemies;
